@@ -30,6 +30,8 @@
   let mouseTarget = 0;
   let mouseEased = 0;
   let activeBand = -1;
+  let scrollTarget = 0;
+  let scrollEased = 0;
   let pulseDist = -1;
   const dots = [];
 
@@ -161,7 +163,8 @@
     treeCtx.globalAlpha = 1 - Math.pow(1 - entrance, 3);
 
     dots.length = 0;
-    branch(treeW / 2, treeH + 16, -Math.PI / 2, treeH * 0.17, DEPTH, 1, 0, elapsed);
+    const grow = still ? 0 : Math.min(1, scrollEased / (window.innerHeight * 2));
+    branch(treeW / 2, treeH + 16, -Math.PI / 2, treeH * (0.17 + 0.09 * grow), DEPTH, 1, 0, elapsed);
 
     treeCtx.fillStyle = rgba(accent, 1);
     for (let i = 0; i < dots.length; i += 2) {
@@ -178,6 +181,7 @@
     last = now;
     const elapsed = now - started;
     mouseEased += (mouseTarget - mouseEased) * (1 - Math.exp(-dt / 250));
+    scrollEased += (scrollTarget - scrollEased) * (1 - Math.exp(-dt / 180));
     stepField(dt);
     drawField(elapsed);
     drawTree(elapsed);
@@ -223,6 +227,10 @@
     resizeTimer = setTimeout(setup, 150);
   });
 
+  window.addEventListener("scroll", () => {
+    scrollTarget = window.scrollY;
+  }, { passive: true });
+
   window.addEventListener("mousemove", (e) => {
     if (!still) mouseTarget = (e.clientX / window.innerWidth) * 2 - 1;
   });
@@ -234,5 +242,22 @@
 
   reduceMotion.addEventListener("change", setup);
 
+  document.documentElement.classList.add("js");
+
+  const observer = new IntersectionObserver((entries) => {
+    let order = 0;
+    for (const entry of entries) {
+      if (!entry.isIntersecting) continue;
+      if (order > 0 && order < 6) entry.target.classList.add("s" + order);
+      entry.target.classList.add("shown");
+      observer.unobserve(entry.target);
+      order++;
+    }
+  }, { threshold: 0.15 });
+
+  for (const el of document.querySelectorAll(".reveal")) observer.observe(el);
+
+  scrollTarget = window.scrollY;
+  scrollEased = scrollTarget;
   setup();
 })();

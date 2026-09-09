@@ -190,6 +190,25 @@ main { padding: var(--section-gap) var(--pad); }
 
 .contact-list a:hover { color: var(--text); }
 
+/* Hidden only once JS is running, so the page stays readable without it. */
+.js .reveal {
+  opacity: 0;
+  transform: translateY(14px);
+}
+
+/* Transition lives on the shown state so applying .js cannot animate content out. */
+.js .reveal.shown {
+  opacity: 1;
+  transform: none;
+  transition: opacity 700ms var(--ease), transform 700ms var(--ease);
+}
+
+.js .reveal.shown.s1 { transition-delay: 70ms; }
+.js .reveal.shown.s2 { transition-delay: 140ms; }
+.js .reveal.shown.s3 { transition-delay: 210ms; }
+.js .reveal.shown.s4 { transition-delay: 280ms; }
+.js .reveal.shown.s5 { transition-delay: 350ms; }
+
 a:focus-visible {
   outline: 1px solid var(--text);
   outline-offset: 4px;
