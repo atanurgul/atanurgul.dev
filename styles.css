@@ -115,6 +115,8 @@ main {
   transition: opacity 700ms var(--ease);
 }
 
+.layer.lit { opacity: 0.85; }
+
 main { padding: var(--section-gap) var(--pad); }
 
 .section + .section { margin-top: var(--section-gap); }

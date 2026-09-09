@@ -2,17 +2,36 @@
   const field = document.getElementById("field");
   if (!field || !field.getContext) return;
 
-  const ctx = field.getContext("2d");
+  const tree = document.getElementById("tree");
+  const labels = Array.prototype.slice.call(document.querySelectorAll(".layer"));
+  const fieldCtx = field.getContext("2d");
+  const treeCtx = tree && tree.getContext ? tree.getContext("2d") : null;
+
   const MOBILE_WIDTH = 768;
+  const DEPTH = 9;
+  const PULSE_TRAVEL = 5000;
+  const PULSE_PAUSE = 2000;
+  const ENTRANCE = 2600;
+  const TIP_GLOW = 40;
+
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
   const text = readRGB("--text");
+  const accent = readRGB("--accent");
 
   let w = 0;
   let h = 0;
+  let treeW = 0;
+  let treeH = 0;
   let particles = [];
   let still = false;
   let rafId = 0;
   let last = 0;
+  const started = performance.now();
+  let mouseTarget = 0;
+  let mouseEased = 0;
+  let activeBand = -1;
+  let pulseDist = -1;
+  const dots = [];
 
   function readRGB(name) {
     const hex = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
@@ -21,15 +40,20 @@
   }
 
   const rand = (min, max) => min + Math.random() * (max - min);
+  const rgba = (c, a) => `rgba(${c[0]}, ${c[1]}, ${c[2]}, ${a})`;
 
-  function resize() {
-    const rect = field.getBoundingClientRect();
-    w = rect.width;
-    h = rect.height;
+  function seeded(seed) {
+    const x = Math.sin(seed * 127.1) * 43758.5453;
+    return x - Math.floor(x);
+  }
+
+  function sizeCanvas(canvas, ctx) {
+    const rect = canvas.getBoundingClientRect();
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    field.width = Math.round(w * dpr);
-    field.height = Math.round(h * dpr);
+    canvas.width = Math.round(rect.width * dpr);
+    canvas.height = Math.round(rect.height * dpr);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    return rect;
   }
 
   function build() {
@@ -54,7 +78,7 @@
     }
   }
 
-  function step(dt) {
+  function stepField(dt) {
     for (const p of particles) {
       p.x += p.vx * dt;
       p.y += p.vy * dt;
@@ -65,23 +89,98 @@
     }
   }
 
-  function draw(now) {
-    ctx.clearRect(0, 0, w, h);
+  function drawField(elapsed) {
+    fieldCtx.clearRect(0, 0, w, h);
     for (const p of particles) {
-      const breath = still ? 0.5 : 0.5 + 0.5 * Math.sin((now / p.period) * Math.PI * 2 + p.phase);
-      const alpha = p.lo + (p.hi - p.lo) * breath;
-      ctx.fillStyle = `rgba(${text[0]}, ${text[1]}, ${text[2]}, ${alpha})`;
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-      ctx.fill();
+      const breath = still ? 0.5 : 0.5 + 0.5 * Math.sin((elapsed / p.period) * Math.PI * 2 + p.phase);
+      fieldCtx.fillStyle = rgba(text, p.lo + (p.hi - p.lo) * breath);
+      fieldCtx.beginPath();
+      fieldCtx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      fieldCtx.fill();
     }
+  }
+
+  function branch(x, y, angle, len, depth, seed, dist, elapsed) {
+    const lean = still ? 0 : Math.sin(elapsed * 0.0005 + seed * 6.3) * 0.028 * (DEPTH - depth);
+    const a = angle + lean + mouseEased * 0.009 * (DEPTH - depth);
+    const x2 = x + Math.cos(a) * len;
+    const y2 = y + Math.sin(a) * len;
+    const d1 = dist + len;
+
+    treeCtx.lineWidth = Math.max(0.4, depth * 0.28);
+    treeCtx.strokeStyle = rgba(text, 0.03 + depth * 0.03);
+    treeCtx.beginPath();
+    treeCtx.moveTo(x, y);
+    treeCtx.lineTo(x2, y2);
+    treeCtx.stroke();
+
+    if (pulseDist >= dist && pulseDist <= d1) {
+      const k = (pulseDist - dist) / len;
+      dots.push(x + (x2 - x) * k, y + (y2 - y) * k);
+    }
+
+    const childDepth = depth - 1;
+    const childLen = len * (0.73 + seeded(seed) * 0.05);
+
+    if (childDepth < 1 || childLen < 1.3) {
+      const past = pulseDist - d1;
+      const glow = past >= 0 && past < TIP_GLOW ? (1 - past / TIP_GLOW) * 0.64 : 0;
+      treeCtx.fillStyle = rgba(text, 0.16 + glow);
+      treeCtx.beginPath();
+      treeCtx.arc(x2, y2, 1, 0, Math.PI * 2);
+      treeCtx.fill();
+      return;
+    }
+
+    branch(x2, y2, a - (0.28 + seeded(seed + 0.37) * 0.24), childLen, childDepth, seed * 2, d1, elapsed);
+    branch(x2, y2, a + (0.28 + seeded(seed + 0.71) * 0.24), childLen, childDepth, seed * 2 + 1, d1, elapsed);
+  }
+
+  function setBand(index) {
+    if (index === activeBand) return;
+    activeBand = index;
+    for (let i = 0; i < labels.length; i++) labels[i].classList.toggle("lit", i === index);
+  }
+
+  function drawTree(elapsed) {
+    if (!treeCtx) return;
+    treeCtx.clearRect(0, 0, treeW, treeH);
+
+    const travel = treeH * 0.62;
+    if (still) {
+      pulseDist = -1;
+      setBand(-1);
+    } else {
+      const phase = elapsed % (PULSE_TRAVEL + PULSE_PAUSE);
+      const running = phase < PULSE_TRAVEL;
+      pulseDist = running ? (phase / PULSE_TRAVEL) * travel : -1;
+      setBand(running ? Math.min(5, Math.floor((pulseDist / travel) * 6)) : -1);
+    }
+
+    const entrance = still ? 1 : Math.min(1, elapsed / ENTRANCE);
+    treeCtx.globalAlpha = 1 - Math.pow(1 - entrance, 3);
+
+    dots.length = 0;
+    branch(treeW / 2, treeH + 16, -Math.PI / 2, treeH * 0.17, DEPTH, 1, 0, elapsed);
+
+    treeCtx.fillStyle = rgba(accent, 1);
+    for (let i = 0; i < dots.length; i += 2) {
+      treeCtx.beginPath();
+      treeCtx.arc(dots[i], dots[i + 1], 1.5, 0, Math.PI * 2);
+      treeCtx.fill();
+    }
+
+    treeCtx.globalAlpha = 1;
   }
 
   function frame(now) {
     const dt = Math.min(now - last, 50);
     last = now;
-    step(dt);
-    draw(now);
+    const elapsed = now - started;
+    mouseEased += (mouseTarget - mouseEased) * (1 - Math.exp(-dt / 250));
+    stepField(dt);
+    drawField(elapsed);
+    drawTree(elapsed);
     rafId = requestAnimationFrame(frame);
   }
 
@@ -99,17 +198,33 @@
 
   function setup() {
     stop();
-    resize();
+    const rect = sizeCanvas(field, fieldCtx);
+    w = rect.width;
+    h = rect.height;
+    if (treeCtx) {
+      const treeRect = sizeCanvas(tree, treeCtx);
+      treeW = treeRect.width;
+      treeH = treeRect.height;
+    }
     still = reduceMotion.matches || w < MOBILE_WIDTH;
     build();
-    if (still) draw(performance.now());
-    else start();
+    if (still) {
+      mouseEased = 0;
+      drawField(0);
+      drawTree(0);
+    } else {
+      start();
+    }
   }
 
   let resizeTimer = 0;
   window.addEventListener("resize", () => {
     clearTimeout(resizeTimer);
     resizeTimer = setTimeout(setup, 150);
+  });
+
+  window.addEventListener("mousemove", (e) => {
+    if (!still) mouseTarget = (e.clientX / window.innerWidth) * 2 - 1;
   });
 
   document.addEventListener("visibilitychange", () => {
