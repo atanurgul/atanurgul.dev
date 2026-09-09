@@ -34,6 +34,84 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+.threshold {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.threshold-name {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 34px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+  color: var(--text);
+}
+
+.threshold-track {
+  width: 220px;
+  height: 1px;
+  margin-top: 32px;
+  background: var(--dim);
+}
+
+/* JavaScript only writes the number; the rule that turns it into a width
+   stays here so no element carries a style attribute. */
+.threshold-fill {
+  width: calc(var(--progress, 0) * 1%);
+  height: 100%;
+  background: var(--accent);
+  transition: width 700ms var(--ease);
+}
+
+.threshold-count {
+  margin: 16px 0 0;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: 0.14em;
+  color: var(--muted);
+}
+
+.threshold-skip {
+  position: absolute;
+  right: var(--pad);
+  bottom: var(--pad);
+  padding: 0;
+  background: none;
+  border: 0;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--dim);
+  cursor: pointer;
+}
+
+.threshold-skip:focus-visible {
+  outline: 1px solid var(--text);
+  outline-offset: 4px;
+}
+
+/* The brief sets 900ms here deliberately, against the page-wide 700ms. */
+.threshold-out {
+  transform: translateY(-100%);
+  transition: transform 900ms var(--ease);
+}
+
+.threshold-open,
+.threshold-open body { overflow: hidden; }
+
 #field {
   position: fixed;
   inset: 0;
