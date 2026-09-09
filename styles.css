@@ -12,9 +12,9 @@
   --pad: 40px;
   --gap: 160px;
   --rail: 140px;
-  --rail-gap: 48px;
+  --rail-gap: 32px;
   --indent: calc(var(--rail) + var(--rail-gap));
-  --measure: 460px;
+  --measure: 400px;
   --measure-wide: 620px;
   --ease: cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -139,6 +139,37 @@ main { padding: var(--gap) 0; }
 
 .row + .row { margin-top: 96px; }
 
+.row-media {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+/* Screenshots sit straight on the background: the mask dissolves all four
+   edges so nothing reads as a framed rectangle, and the brightness drop stops
+   a pale screenshot punching a hole in the page. */
+.shot {
+  display: block;
+  width: 100%;
+  height: auto;
+  filter: brightness(0.9);
+  -webkit-mask-image:
+    linear-gradient(to right, transparent 0, #000 40px, #000 calc(100% - 40px), transparent 100%),
+    linear-gradient(to bottom, transparent 0, #000 40px, #000 calc(100% - 40px), transparent 100%);
+  -webkit-mask-composite: source-in;
+  mask-image:
+    linear-gradient(to right, transparent 0, #000 40px, #000 calc(100% - 40px), transparent 100%),
+    linear-gradient(to bottom, transparent 0, #000 40px, #000 calc(100% - 40px), transparent 100%);
+  mask-composite: intersect;
+}
+
+.shot-small { width: 55%; }
+
+/* The brief's 90% is enough for a dark screenshot but not a pale one: this
+   page averages 215/255 against an 11/255 ground and reads as a lit panel. */
+.shot-pale { filter: brightness(0.62); }
+
+
 .index {
   padding-top: 8px;
   color: var(--muted);
@@ -220,4 +251,6 @@ a:focus-visible {
   }
 
   .experiment { margin-left: 0; }
+
+  .shot-small { width: 70%; }
 }
