@@ -138,12 +138,12 @@ main { padding: var(--gap) 0; }
 
 .row-wide { grid-template-columns: var(--rail) minmax(0, var(--measure-wide)); }
 
-.row + .row { margin-top: 96px; }
+.row + .row { margin-top: 64px; }
 
 .row-media {
   display: flex;
   flex-direction: column;
-  gap: 32px;
+  gap: 24px;
 }
 
 /* Screenshots sit straight on the background: the mask dissolves all four
@@ -164,7 +164,7 @@ main { padding: var(--gap) 0; }
   mask-composite: intersect;
 }
 
-.shot-small { width: 55%; }
+.shot-small { width: 45%; }
 
 /* The brief's 90% is enough for a dark screenshot but not a pale one: this
    page averages 215/255 against an 11/255 ground and reads as a lit panel. */
@@ -191,7 +191,7 @@ main { padding: var(--gap) 0; }
   max-width: var(--measure-wide);
 }
 
-.experiment + .experiment { margin-top: 48px; }
+.experiment + .experiment { margin-top: 40px; }
 
 .experiment-title {
   margin: 0;
