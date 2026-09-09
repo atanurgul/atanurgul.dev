@@ -7,13 +7,16 @@
   const fieldCtx = field.getContext("2d");
   const treeCtx = tree && tree.getContext ? tree.getContext("2d") : null;
 
-  const MOBILE_WIDTH = 768;
+  const cache = document.createElement("canvas");
+  const cacheCtx = cache.getContext("2d");
+
   const DEPTH = 9;
   const PULSE_TRAVEL = 5000;
   const PULSE_PAUSE = 2000;
   const ENTRANCE = 2600;
   const TIP_GLOW = 40;
 
+  const smallScreen = window.matchMedia("(max-width: 767.98px)");
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
   const text = readRGB("--text");
   const accent = readRGB("--accent");
@@ -22,17 +25,21 @@
   let h = 0;
   let treeW = 0;
   let treeH = 0;
+  let dpr = 1;
   let particles = [];
+  let segments = [];
+  let tips = [];
+  let mode = "full";
   let still = false;
   let rafId = 0;
   let last = 0;
-  const started = performance.now();
   let mouseTarget = 0;
   let mouseEased = 0;
-  let activeBand = -1;
   let scrollTarget = 0;
   let scrollEased = 0;
+  let activeBand = -1;
   let pulseDist = -1;
+  const started = performance.now();
   const dots = [];
 
   function readRGB(name) {
@@ -42,7 +49,7 @@
   }
 
   const rand = (min, max) => min + Math.random() * (max - min);
-  const rgba = (c, a) => `rgba(${c[0]}, ${c[1]}, ${c[2]}, ${a})`;
+  const rgba = (c, a) => "rgba(" + c[0] + ", " + c[1] + ", " + c[2] + ", " + a + ")";
 
   function seeded(seed) {
     const x = Math.sin(seed * 127.1) * 43758.5453;
@@ -51,7 +58,6 @@
 
   function sizeCanvas(canvas, ctx) {
     const rect = canvas.getBoundingClientRect();
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
     canvas.width = Math.round(rect.width * dpr);
     canvas.height = Math.round(rect.height * dpr);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -59,7 +65,7 @@
   }
 
   function build() {
-    const count = w < MOBILE_WIDTH ? 50 : 120;
+    const count = smallScreen.matches ? 50 : 120;
     particles = [];
     for (let i = 0; i < count; i++) {
       const angle = rand(0, Math.PI * 2);
@@ -102,21 +108,24 @@
     }
   }
 
-  function branch(x, y, angle, len, depth, seed, dist, elapsed) {
-    const lean = still ? 0 : Math.sin(elapsed * 0.0005 + seed * 6.3) * 0.028 * (DEPTH - depth);
-    const a = angle + lean + mouseEased * 0.009 * (DEPTH - depth);
+  function branch(ctx, x, y, angle, len, depth, seed, dist, elapsed, record) {
+    const lean = record ? 0 : Math.sin(elapsed * 0.0005 + seed * 6.3) * 0.028 * (DEPTH - depth);
+    const drift = record ? 0 : mouseEased * 0.009 * (DEPTH - depth);
+    const a = angle + lean + drift;
     const x2 = x + Math.cos(a) * len;
     const y2 = y + Math.sin(a) * len;
     const d1 = dist + len;
 
-    treeCtx.lineWidth = Math.max(0.4, depth * 0.28);
-    treeCtx.strokeStyle = rgba(text, 0.03 + depth * 0.03);
-    treeCtx.beginPath();
-    treeCtx.moveTo(x, y);
-    treeCtx.lineTo(x2, y2);
-    treeCtx.stroke();
+    ctx.lineWidth = Math.max(0.4, depth * 0.28);
+    ctx.strokeStyle = rgba(text, 0.03 + depth * 0.03);
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.lineTo(x2, y2);
+    ctx.stroke();
 
-    if (pulseDist >= dist && pulseDist <= d1) {
+    if (record) {
+      segments.push(x, y, x2, y2, dist, d1);
+    } else if (pulseDist >= dist && pulseDist <= d1) {
       const k = (pulseDist - dist) / len;
       dots.push(x + (x2 - x) * k, y + (y2 - y) * k);
     }
@@ -125,17 +134,72 @@
     const childLen = len * (0.73 + seeded(seed) * 0.05);
 
     if (childDepth < 1 || childLen < 1.3) {
-      const past = pulseDist - d1;
-      const glow = past >= 0 && past < TIP_GLOW ? (1 - past / TIP_GLOW) * 0.64 : 0;
-      treeCtx.fillStyle = rgba(text, 0.16 + glow);
-      treeCtx.beginPath();
-      treeCtx.arc(x2, y2, 1, 0, Math.PI * 2);
-      treeCtx.fill();
+      if (record) {
+        tips.push(x2, y2, d1);
+      } else {
+        const past = pulseDist - d1;
+        const glow = past >= 0 && past < TIP_GLOW ? (1 - past / TIP_GLOW) * 0.64 : 0;
+        ctx.fillStyle = rgba(text, 0.16 + glow);
+        ctx.beginPath();
+        ctx.arc(x2, y2, 1, 0, Math.PI * 2);
+        ctx.fill();
+      }
       return;
     }
 
-    branch(x2, y2, a - (0.28 + seeded(seed + 0.37) * 0.24), childLen, childDepth, seed * 2, d1, elapsed);
-    branch(x2, y2, a + (0.28 + seeded(seed + 0.71) * 0.24), childLen, childDepth, seed * 2 + 1, d1, elapsed);
+    branch(ctx, x2, y2, a - (0.28 + seeded(seed + 0.37) * 0.24), childLen, childDepth, seed * 2, d1, elapsed, record);
+    branch(ctx, x2, y2, a + (0.28 + seeded(seed + 0.71) * 0.24), childLen, childDepth, seed * 2 + 1, d1, elapsed, record);
+  }
+
+  function buildCache() {
+    if (!treeCtx) return;
+    cache.width = tree.width;
+    cache.height = tree.height;
+    cacheCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    cacheCtx.clearRect(0, 0, treeW, treeH);
+    segments = [];
+    tips = [];
+    branch(cacheCtx, treeW / 2, treeH + 16, -Math.PI / 2, treeH * 0.17, DEPTH, 1, 0, 0, true);
+  }
+
+  function drawTips() {
+    const hot = [];
+    treeCtx.fillStyle = rgba(text, 0.16);
+    treeCtx.beginPath();
+    for (let i = 0; i < tips.length; i += 3) {
+      const past = pulseDist - tips[i + 2];
+      if (past >= 0 && past < TIP_GLOW) {
+        hot.push(i);
+        continue;
+      }
+      treeCtx.moveTo(tips[i] + 1, tips[i + 1]);
+      treeCtx.arc(tips[i], tips[i + 1], 1, 0, Math.PI * 2);
+    }
+    treeCtx.fill();
+
+    for (const i of hot) {
+      treeCtx.fillStyle = rgba(text, 0.16 + (1 - (pulseDist - tips[i + 2]) / TIP_GLOW) * 0.64);
+      treeCtx.beginPath();
+      treeCtx.arc(tips[i], tips[i + 1], 1, 0, Math.PI * 2);
+      treeCtx.fill();
+    }
+  }
+
+  function drawCachedPulse() {
+    if (pulseDist < 0) return;
+    treeCtx.fillStyle = rgba(accent, 1);
+    treeCtx.beginPath();
+    for (let i = 0; i < segments.length; i += 6) {
+      const d0 = segments[i + 4];
+      const d1 = segments[i + 5];
+      if (pulseDist < d0 || pulseDist > d1) continue;
+      const k = (pulseDist - d0) / (d1 - d0);
+      const x = segments[i] + (segments[i + 2] - segments[i]) * k;
+      const y = segments[i + 1] + (segments[i + 3] - segments[i + 1]) * k;
+      treeCtx.moveTo(x + 1.5, y);
+      treeCtx.arc(x, y, 1.5, 0, Math.PI * 2);
+    }
+    treeCtx.fill();
   }
 
   function setBand(index) {
@@ -148,23 +212,34 @@
     if (!treeCtx) return;
     treeCtx.clearRect(0, 0, treeW, treeH);
 
-    const travel = treeH * 0.62;
-    if (still) {
+    const reach = treeH * 0.62;
+    if (mode === "none") {
       pulseDist = -1;
       setBand(-1);
     } else {
-      const phase = elapsed % (PULSE_TRAVEL + PULSE_PAUSE);
-      const running = phase < PULSE_TRAVEL;
-      pulseDist = running ? (phase / PULSE_TRAVEL) * travel : -1;
-      setBand(running ? Math.min(5, Math.floor((pulseDist / travel) * 6)) : -1);
+      const span = mode === "pulse" ? PULSE_TRAVEL * 2 : PULSE_TRAVEL;
+      const phase = elapsed % (span + PULSE_PAUSE);
+      const running = phase < span;
+      pulseDist = running ? (phase / span) * reach : -1;
+      setBand(running ? Math.min(5, Math.floor((pulseDist / reach) * 6)) : -1);
     }
 
-    const entrance = still ? 1 : Math.min(1, elapsed / ENTRANCE);
+    if (still) {
+      treeCtx.save();
+      treeCtx.setTransform(1, 0, 0, 1, 0, 0);
+      treeCtx.drawImage(cache, 0, 0);
+      treeCtx.restore();
+      drawTips();
+      drawCachedPulse();
+      return;
+    }
+
+    const entrance = Math.min(1, elapsed / ENTRANCE);
     treeCtx.globalAlpha = 1 - Math.pow(1 - entrance, 3);
 
     dots.length = 0;
-    const grow = still ? 0 : Math.min(1, scrollEased / (window.innerHeight * 2));
-    branch(treeW / 2, treeH + 16, -Math.PI / 2, treeH * (0.17 + 0.09 * grow), DEPTH, 1, 0, elapsed);
+    const grow = Math.min(1, scrollEased / (window.innerHeight * 2));
+    branch(treeCtx, treeW / 2, treeH + 16, -Math.PI / 2, treeH * (0.17 + 0.09 * grow), DEPTH, 1, 0, elapsed, false);
 
     treeCtx.fillStyle = rgba(accent, 1);
     for (let i = 0; i < dots.length; i += 2) {
@@ -180,16 +255,18 @@
     const dt = Math.min(now - last, 50);
     last = now;
     const elapsed = now - started;
-    mouseEased += (mouseTarget - mouseEased) * (1 - Math.exp(-dt / 250));
-    scrollEased += (scrollTarget - scrollEased) * (1 - Math.exp(-dt / 180));
-    stepField(dt);
-    drawField(elapsed);
+    if (!still) {
+      mouseEased += (mouseTarget - mouseEased) * (1 - Math.exp(-dt / 250));
+      scrollEased += (scrollTarget - scrollEased) * (1 - Math.exp(-dt / 180));
+      stepField(dt);
+      drawField(elapsed);
+    }
     drawTree(elapsed);
     rafId = requestAnimationFrame(frame);
   }
 
   function start() {
-    if (rafId || still) return;
+    if (rafId || mode === "none") return;
     last = performance.now();
     rafId = requestAnimationFrame(frame);
   }
@@ -202,6 +279,7 @@
 
   function setup() {
     stop();
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
     const rect = sizeCanvas(field, fieldCtx);
     w = rect.width;
     h = rect.height;
@@ -210,15 +288,19 @@
       treeW = treeRect.width;
       treeH = treeRect.height;
     }
-    still = reduceMotion.matches || w < MOBILE_WIDTH;
+
+    mode = reduceMotion.matches ? "none" : smallScreen.matches ? "pulse" : "full";
+    still = mode !== "full";
+
     build();
     if (still) {
       mouseEased = 0;
+      mouseTarget = 0;
+      buildCache();
       drawField(0);
       drawTree(0);
-    } else {
-      start();
     }
+    start();
   }
 
   let resizeTimer = 0;
@@ -241,6 +323,7 @@
   });
 
   reduceMotion.addEventListener("change", setup);
+  smallScreen.addEventListener("change", setup);
 
   document.documentElement.classList.add("js");
 

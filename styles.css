@@ -213,3 +213,31 @@ a:focus-visible {
   outline: 1px solid var(--text);
   outline-offset: 4px;
 }
+
+@media (max-width: 767.98px) {
+  :root {
+    --pad: 24px;
+    --rail: 0px;
+    --section-gap: 96px;
+  }
+
+  .hero-name {
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 0;
+  }
+
+  .layers { display: none; }
+}
+
+@media (max-width: 767.98px), (prefers-reduced-motion: reduce) {
+  .js .reveal {
+    opacity: 1;
+    transform: none;
+  }
+
+  .js .reveal.shown { transition: none; }
+
+  .layer { transition: none; }
+}
