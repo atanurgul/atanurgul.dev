@@ -6,7 +6,7 @@
 <title>Atanur Gül</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Inter:wght@400;500&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -14,65 +14,62 @@
 <canvas id="field" aria-hidden="true"></canvas>
 
 <header class="hero">
-  <canvas id="tree" aria-hidden="true"></canvas>
-  <h1 class="hero-name reveal">
-    <span class="hero-first">Atanur</span>
-    <span class="hero-last">Gül</span>
-  </h1>
-  <ul class="layers" aria-hidden="true">
-    <li class="layer">Receive</li>
-    <li class="layer">Route</li>
-    <li class="layer">Validate</li>
-    <li class="layer">Handle</li>
-    <li class="layer">Query</li>
-    <li class="layer">Respond</li>
-  </ul>
+  <div class="wrap">
+    <h1 class="hero-name">Atanur Gül</h1>
+    <p class="hero-meta">Backend developer · Turkey</p>
+  </div>
 </header>
 
-<main>
+<main class="wrap">
 
   <section class="section" id="about">
-    <h2 class="label reveal">About</h2>
-    <p class="body reveal">Final-year software engineering student at Toros University, graduating June 2027. I work mainly in C# and .NET, with Python as a second tool. I'm interested in the unglamorous part of software: data models that don't rot, APIs that behave predictably, and systems someone else can pick up after me.</p>
+    <h2 class="label">About</h2>
+    <p class="body">Final-year software engineering student at Toros University, graduating June 2027. I work mainly in C# and .NET, with Python as a second tool. I'm interested in the unglamorous part of software: data models that don't rot, APIs that behave predictably, and systems someone else can pick up after me.</p>
   </section>
 
   <section class="section" id="work">
-    <h2 class="label reveal">Selected work</h2>
+    <h2 class="label">Selected work</h2>
 
-    <article class="row reveal">
-      <span class="index">01</span>
-      <h3 class="project-title">Internal management panel</h3>
-      <p class="body">A family-run security training institution was tracking student records, course groups and certifications on paper and in scattered spreadsheets. I built an internal panel around a single source of truth, so enrolment, attendance and certification all read from the same data instead of three copies of it.</p>
+    <article class="row">
+      <div class="row-text">
+        <span class="index">01</span>
+        <h3 class="project-title">Yggdrasil</h3>
+        <p class="body">A Norse mythology reader built as a progressive web app: 102 bilingual entries across nine chapters, interlinked, with a glossary and a timeline. The interesting constraint was having no backend at all — everything is structured content shipped to the client, which forced the data model to carry weight the server usually would.</p>
+      </div>
     </article>
 
-    <article class="row reveal">
-      <span class="index">02</span>
-      <h3 class="project-title">osmaniyeataguvenlik.com</h3>
-      <p class="body">The institution had no online presence in a market where people search before they call. Built as a static promotional site, deliberately kept separate from the internal panel so the two could change independently.</p>
+    <article class="row row-wide">
+      <div class="row-text">
+        <span class="index">02</span>
+        <h3 class="project-title">Internal management panel</h3>
+        <p class="body">A family-run security training institution was tracking student records, course groups and certifications on paper and in scattered spreadsheets. I built an internal panel around a single source of truth, so enrolment, attendance and certification all read from the same data instead of three copies of it.</p>
+      </div>
     </article>
 
-    <article class="row reveal">
-      <span class="index">03</span>
-      <h3 class="project-title">Library management system</h3>
-      <p class="body">A desktop application in Python for tracking lending and returns. My first project where the data model mattered more than the interface.</p>
+    <article class="row">
+      <div class="row-text">
+        <span class="index">03</span>
+        <h3 class="project-title">Institution website</h3>
+        <p class="body">The institution had no online presence in a market where people search before they call. Built as a static promotional site with WhatsApp-first contact, deliberately kept separate from the internal panel so the two could change independently.</p>
+      </div>
     </article>
 
   </section>
 
   <section class="section" id="experiments">
-    <h2 class="label reveal">Experiments</h2>
+    <h2 class="label">Experiments</h2>
 
-    <article class="row reveal">
-      <h3 class="experiment-title">Yggdrasil</h3>
-      <p class="body">A progressive web app collecting Norse mythology as a structured, browsable library rather than a wall of text. Built to see how far a client-only app could go with no backend at all.</p>
+    <article class="experiment">
+      <h3 class="experiment-title">Library management system</h3>
+      <p class="body">A desktop application in Python for tracking lending and returns. My first project where the data model mattered more than the interface.</p>
     </article>
 
-    <article class="row reveal">
+    <article class="experiment">
       <h3 class="experiment-title">Manevora</h3>
       <p class="body">An experiment in conversational product design: what an AI companion should remember, forget, and refuse to do.</p>
     </article>
 
-    <article class="row reveal">
+    <article class="experiment">
       <h3 class="experiment-title">Data analysis notebooks</h3>
       <p class="body">Exploratory work in Python and pandas.</p>
     </article>
@@ -80,21 +77,21 @@
   </section>
 
   <section class="section" id="stack">
-    <h2 class="label reveal">Stack</h2>
-    <p class="body reveal">C# · .NET · ASP.NET Core · SQL Server · Python · Git · Azure (learning)</p>
+    <h2 class="label">Stack</h2>
+    <p class="body">C# · .NET · ASP.NET Core · SQL Server · Python · Git · Azure (learning)</p>
   </section>
 
   <section class="section" id="contact">
-    <h2 class="label reveal">Contact</h2>
+    <h2 class="label">Contact</h2>
     <ul class="contact-list">
-      <li class="reveal"><a href="https://github.com/atanurgul" target="_blank" rel="noopener">GitHub</a></li>
-      <li class="reveal"><a href="https://www.linkedin.com/in/atanurgul/" target="_blank" rel="noopener">LinkedIn</a></li>
-      <li class="reveal"><a href="mailto:atanurgl@gmail.com">atanurgl@gmail.com</a></li>
+      <li><a href="https://github.com/atanurgul" target="_blank" rel="noopener">GitHub</a></li>
+      <li><a href="https://www.linkedin.com/in/atanurgul/" target="_blank" rel="noopener">LinkedIn</a></li>
+      <li><a href="mailto:atanurgl@gmail.com">atanurgl@gmail.com</a></li>
     </ul>
   </section>
 
 </main>
 
-<script src="main.js"></script>
+<script src="main.js" defer></script>
 </body>
 </html>
