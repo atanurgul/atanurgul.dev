@@ -11,6 +11,9 @@
 
   --pad: 40px;
   --gap: 160px;
+  --rail: 140px;
+  --rail-gap: 48px;
+  --indent: calc(var(--rail) + var(--rail-gap));
   --measure: 460px;
   --measure-wide: 620px;
   --ease: cubic-bezier(0.16, 1, 0.3, 1);
@@ -96,35 +99,48 @@ main {
 
 main { padding: var(--gap) 0; }
 
+/* Label sits in the left rail beside its prose; the rail keeps a single left
+   spine down the page and stops a narrow column stranding the right half. */
+.section {
+  display: grid;
+  grid-template-columns: var(--rail) minmax(0, var(--measure-wide));
+  column-gap: var(--rail-gap);
+  align-items: start;
+}
+
 .section + .section { margin-top: var(--gap); }
 
 .label {
-  margin: 0 0 32px;
+  margin: 0;
   color: var(--accent);
 }
 
+/* Sections whose rows carry their own rail put the label on its own line. */
+#work,
+#experiments { display: block; }
+
+#work > .label,
+#experiments > .label { margin-bottom: 48px; }
+
 .body {
-  max-width: var(--measure);
+  max-width: var(--measure-wide);
   margin: 0;
   color: var(--muted);
 }
 
 .row {
   display: grid;
-  grid-template-columns: minmax(0, var(--measure)) minmax(0, 1fr);
-  gap: 64px;
+  grid-template-columns: var(--rail) minmax(0, var(--measure)) minmax(0, 1fr);
+  column-gap: var(--rail-gap);
   align-items: start;
 }
 
-.row-wide { grid-template-columns: minmax(0, var(--measure-wide)); }
-
-.row-wide .body { max-width: var(--measure-wide); }
+.row-wide { grid-template-columns: var(--rail) minmax(0, var(--measure-wide)); }
 
 .row + .row { margin-top: 96px; }
 
 .index {
-  display: block;
-  margin-bottom: 16px;
+  padding-top: 8px;
   color: var(--muted);
 }
 
@@ -138,6 +154,13 @@ main { padding: var(--gap) 0; }
   color: var(--text);
 }
 
+.experiment {
+  margin-left: var(--indent);
+  max-width: var(--measure-wide);
+}
+
+.experiment + .experiment { margin-top: 48px; }
+
 .experiment-title {
   margin: 0;
   font-family: var(--serif);
@@ -150,8 +173,6 @@ main { padding: var(--gap) 0; }
 
 .project-title + .body,
 .experiment-title + .body { margin-top: 16px; }
-
-.experiment + .experiment { margin-top: 48px; }
 
 .contact-list {
   margin: 0;
@@ -179,10 +200,24 @@ a:focus-visible {
   :root {
     --pad: 24px;
     --gap: 96px;
+    --rail: 0px;
+    --rail-gap: 0px;
   }
+
+  .section { display: block; }
+
+  .label { margin-bottom: 24px; }
 
   .row,
   .row-wide { grid-template-columns: minmax(0, 1fr); }
 
   .row + .row { margin-top: 64px; }
+
+  .index {
+    display: block;
+    padding-top: 0;
+    margin-bottom: 16px;
+  }
+
+  .experiment { margin-left: 0; }
 }
