@@ -11,10 +11,10 @@
 
   --pad: 40px;
   --gap: 160px;
-  --rail: 140px;
+  --rail: 100px;
   --rail-gap: 32px;
   --indent: calc(var(--rail) + var(--rail-gap));
-  --measure: 400px;
+  --measure: 460px;
   --measure-wide: 620px;
   --ease: cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -113,6 +113,7 @@ main { padding: var(--gap) 0; }
 .label {
   margin: 0;
   color: var(--accent);
+  white-space: nowrap;
 }
 
 /* Sections whose rows carry their own rail put the label on its own line. */
